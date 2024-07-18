@@ -280,3 +280,11 @@ variable "http_keep_alive_timeout_sec" {
   type        = number
   default     = null
 }
+
+variable "cloud_run_service_names"{
+  type = list(string)
+}
+
+variable "region"{
+  type = string
+}

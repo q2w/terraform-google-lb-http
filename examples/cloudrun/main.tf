@@ -24,9 +24,9 @@ provider "google-beta" {
 
 # [START cloudloadbalancing_ext_http_cloudrun]
 module "lb-http" {
-  source  = "terraform-google-modules/lb-http/google//modules/serverless_negs"
-  version = "~> 10.0"
-
+  # source  = "terraform-google-modules/lb-http/google//modules/serverless_negs"
+  # version = "~> 10.0"
+  source = "../../modules/serverless_negs"
   name    = var.lb_name
   project = var.project_id
 
@@ -35,15 +35,17 @@ module "lb-http" {
   https_redirect                  = var.ssl
   labels                          = { "example-label" = "cloud-run-example" }
 
+  region = var.region
+  cloud_run_service_names = [
+    google_cloud_run_service.default_1.name,
+    google_cloud_run_service.default_2.name]
+
   backends = {
-    default = {
+    for index, neg_id in module.lb-http.cloud_run_service_neg_ids :
+    "default-${index+1}" => {
       description = null
-      groups = [
-        {
-          group = google_compute_region_network_endpoint_group.serverless_neg.id
-        }
-      ]
-      enable_cdn = false
+      groups       = [ { group = neg_id } ]
+      enable_cdn   = false
 
       iap_config = {
         enable = false
@@ -55,18 +57,29 @@ module "lb-http" {
   }
 }
 
-resource "google_compute_region_network_endpoint_group" "serverless_neg" {
-  provider              = google-beta
-  name                  = "serverless-neg"
-  network_endpoint_type = "SERVERLESS"
-  region                = var.region
-  cloud_run {
-    service = google_cloud_run_service.default.name
+resource "google_cloud_run_service" "default_1" {
+  name     = "example-1"
+  location = var.region
+  project  = var.project_id
+
+  template {
+    spec {
+      containers {
+        image = "gcr.io/cloudrun/hello"
+      }
+    }
+  }
+  metadata {
+    annotations = {
+      # For valid annotation values and descriptions, see
+      # https://cloud.google.com/sdk/gcloud/reference/run/deploy#--ingress
+      "run.googleapis.com/ingress" = "all"
+    }
   }
 }
 
-resource "google_cloud_run_service" "default" {
-  name     = "example"
+resource "google_cloud_run_service" "default_2" {
+  name     = "example-2"
   location = var.region
   project  = var.project_id
 
@@ -87,9 +100,17 @@ resource "google_cloud_run_service" "default" {
 }
 
 resource "google_cloud_run_service_iam_member" "public-access" {
-  location = google_cloud_run_service.default.location
-  project  = google_cloud_run_service.default.project
-  service  = google_cloud_run_service.default.name
+  location = google_cloud_run_service.default_1.location
+  project  = google_cloud_run_service.default_1.project
+  service  = google_cloud_run_service.default_1.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_cloud_run_service_iam_member" "public-access-2" {
+  location = google_cloud_run_service.default_2.location
+  project  = google_cloud_run_service.default_2.project
+  service  = google_cloud_run_service.default_2.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }

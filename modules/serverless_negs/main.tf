@@ -305,7 +305,16 @@ resource "google_compute_backend_service" "default" {
       }
     }
   }
+}
 
-
+resource "google_compute_region_network_endpoint_group" "serverless_neg" {
+  provider              = google-beta
+  for_each              = toset(var.cloud_run_service_names)
+  name                  = "serverless-neg-${each.value}"
+  network_endpoint_type = "SERVERLESS"
+  region                = var.region
+  cloud_run {
+    service = each.value
+  }
 }
 
