@@ -54,8 +54,3 @@ output "ssl_certificate_created" {
   description = "The SSL certificate create from key/pem"
   value       = google_compute_ssl_certificate.default[*].self_link
 }
-
-output "cloud_run_service_neg_ids"{
-  # value = tolist(google_compute_region_network_endpoint_group.serverless_neg[0].id)
-  value       = [for neg_name, neg in google_compute_region_network_endpoint_group.serverless_neg : neg.id]
-}

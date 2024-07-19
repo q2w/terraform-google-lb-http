@@ -36,16 +36,19 @@ module "lb-http" {
   labels                          = { "example-label" = "cloud-run-example" }
 
   region = var.region
-  cloud_run_service_names = [
-    google_cloud_run_service.default_1.name,
-    google_cloud_run_service.default_2.name]
+  serverless_backends =  [{
+      type = "cloud_run" 
+      service = {
+        name = google_cloud_run_service.default_1.name
+      }
+    }
+  ]
 
   backends = {
-    for index, neg_id in module.lb-http.cloud_run_service_neg_ids :
-    "default-${index+1}" => {
+    default = {
       description = null
-      groups       = [ { group = neg_id } ]
-      enable_cdn   = false
+      groups = []
+      enable_cdn  = false
 
       iap_config = {
         enable = false
@@ -78,27 +81,6 @@ resource "google_cloud_run_service" "default_1" {
   }
 }
 
-resource "google_cloud_run_service" "default_2" {
-  name     = "example-2"
-  location = var.region
-  project  = var.project_id
-
-  template {
-    spec {
-      containers {
-        image = "gcr.io/cloudrun/hello"
-      }
-    }
-  }
-  metadata {
-    annotations = {
-      # For valid annotation values and descriptions, see
-      # https://cloud.google.com/sdk/gcloud/reference/run/deploy#--ingress
-      "run.googleapis.com/ingress" = "all"
-    }
-  }
-}
-
 resource "google_cloud_run_service_iam_member" "public-access" {
   location = google_cloud_run_service.default_1.location
   project  = google_cloud_run_service.default_1.project
@@ -107,11 +89,4 @@ resource "google_cloud_run_service_iam_member" "public-access" {
   member   = "allUsers"
 }
 
-resource "google_cloud_run_service_iam_member" "public-access-2" {
-  location = google_cloud_run_service.default_2.location
-  project  = google_cloud_run_service.default_2.project
-  service  = google_cloud_run_service.default_2.name
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
 # [END cloudloadbalancing_ext_http_cloudrun]

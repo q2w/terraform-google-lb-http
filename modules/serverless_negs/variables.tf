@@ -281,8 +281,12 @@ variable "http_keep_alive_timeout_sec" {
   default     = null
 }
 
-variable "cloud_run_service_names"{
-  type = list(string)
+variable "serverless_backends" {
+  type = list(object({
+      type = string
+      service = object({name = string, version = optional(string)})
+    })
+  )
 }
 
 variable "region"{
