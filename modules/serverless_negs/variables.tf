@@ -280,3 +280,15 @@ variable "http_keep_alive_timeout_sec" {
   type        = number
   default     = null
 }
+
+variable "serverless_backends" {
+  type = list(object({
+      type = string
+      service = object({name = string, version = optional(string)})
+    })
+  )
+}
+
+variable "region"{
+  type = string
+}

@@ -218,6 +218,13 @@ resource "google_compute_backend_service" "default" {
     }
   }
 
+  dynamic "backend" {
+    for_each = google_compute_region_network_endpoint_group.serverless_neg
+    content {
+      group = backend.value.id
+    }
+  }
+
   dynamic "log_config" {
     for_each = lookup(lookup(each.value, "log_config", {}), "enable", true) ? [1] : []
     content {
@@ -305,7 +312,34 @@ resource "google_compute_backend_service" "default" {
       }
     }
   }
-
-
 }
 
+resource "google_compute_region_network_endpoint_group" "serverless_neg" {
+  provider              = google-beta
+  for_each              = { for obj in var.serverless_backends : obj.service.name => obj }
+  name                  = "serverless-neg-${each.value.service.name}"
+  network_endpoint_type = "SERVERLESS"
+  region                = var.region
+
+  dynamic cloud_run {
+    for_each = each.value.type == "cloud_run" ? [1] : []
+    content {
+      service = each.value.service.name
+    }
+  }
+
+  dynamic cloud_function {
+    for_each = each.value.type == "cloud_function" ? [1] : []
+    content {
+      function = each.value.service.name
+    }
+  }
+
+  dynamic app_engine {
+    for_each = each.value.type == "app_engine" ? [1] : []
+    content{
+      service = each.value.value.name
+      version = each.value.value.version
+    }
+  }
+}
