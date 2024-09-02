@@ -40,6 +40,22 @@ module "lb-http" {
       }
     }
   }
+
+  // New input variable to take input for creating url_map
+  url_map = {
+    example.com = [
+      {
+        path = "/path1"
+        backend = "default"
+      }
+    ]
+    examples.com = [
+      {
+        path = "/path2"
+        backend = "default2"
+      }
+    ]
+  }
 }
 
 resource "google_cloud_run_service" "default" {
