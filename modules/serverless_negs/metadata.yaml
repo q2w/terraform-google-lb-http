@@ -158,6 +158,13 @@ spec:
               }))
             }))
         required: true
+        connections:
+          - source:
+              source: github.com/GoogleCloudPlatform/terraform-google-cloud-run//modules/v2
+              version: v0.12.0
+            spec:
+              outputExpr: serverless_neg_required_input
+              inputPath: serverless_neg_backends
       - name: certificate
         description: Content of the SSL certificate. Requires `ssl` to be set to `true` and `create_ssl_certificate` set to `true`
         varType: string
