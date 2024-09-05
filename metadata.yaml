@@ -180,6 +180,13 @@ spec:
               }))
             }))
         required: true
+        connections:
+          - source:
+              source: github.com/terraform-google-modules/terraform-google-vm//modules/mig
+              version: v11.1.0
+            spec:
+              outputExpr: mig_output_for_backend_service
+              inputPath: groups
       - name: certificate
         description: Content of the SSL certificate. Requires `ssl` to be set to `true` and `create_ssl_certificate` set to `true`
         varType: string
